@@ -1,0 +1,19 @@
+services:
+
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: teste
+      MARIADB_DATABASE: maria_db
+      MARIADB_USER: maria_user
+      MARIADB_PASSWORD: maria_password
+    ports:
+      - "3306:3306"
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8081:8081
+

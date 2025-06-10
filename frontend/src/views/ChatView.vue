@@ -2,7 +2,7 @@
   <div class="chat-layout">
     <UserList :users="filteredUsers" :selectedUser="selectedUser" @selectUser="selectUser" />
     <div class="chat-area" v-if="selectedUser">
-      <MessageList :messages="messages" :currentUser="currentUser" />
+      <MessageList :messages="messages" :currentUser="currentUser" :contactUser="selectedUser" />
       <MessageInput @sendMessage="sendMessage" />
     </div>
     <div v-else class="chat-placeholder">Selecione um contato para começar a conversar.</div>
@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 import UserList from '../components/UserList.vue';
 import MessageList from '../components/MessageList.vue';
@@ -22,6 +22,7 @@ const selectedUser = ref<any>(null);
 const messages = ref<any[]>([]);
 const currentUser = ref<any>(null);
 const router = useRouter();
+let ws: WebSocket | null = null;
 
 const fetchUsers = async () => {
   const token = localStorage.getItem('token');
@@ -51,22 +52,49 @@ const selectUser = async (user: any) => {
 const fetchMessages = async () => {
   if (!selectedUser.value || !('id' in selectedUser.value)) return;
   const token = localStorage.getItem('token');
-  const res = await axios.get(`http://localhost:8000/messages/${selectedUser.value.id}`, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await axios.get(`http://localhost:8000/api/messages/${selectedUser.value.id}`, { headers: { Authorization: `Bearer ${token}` } });
   messages.value = res.data;
 };
 
 const sendMessage = async (text: string) => {
   if (!selectedUser.value || !('id' in selectedUser.value) || !currentUser.value) return;
-  const token = localStorage.getItem('token');
-  await axios.post('http://localhost:8000/messages', {
+  const message = {
     from_user_id: currentUser.value.id,
     to_user_id: selectedUser.value.id,
     content: text
-  }, { headers: { Authorization: `Bearer ${token}` } });
-  await fetchMessages();
+  };
+  // Envia pelo WebSocket para broadcast e persistência
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(message));
+  }
+  // Não faz mais POST HTTP!
 };
 
-onMounted(fetchUsers);
+const connectWebSocket = () => {
+  ws = new WebSocket('ws://localhost:8000/ws/chat');
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    // Se a mensagem for do contato atualmente selecionado OU enviada pelo usuário atual para o contato selecionado
+    if (
+      (selectedUser.value && data.from_user_id === selectedUser.value.id && data.to_user_id === currentUser.value?.id) ||
+      (selectedUser.value && data.to_user_id === selectedUser.value.id && data.from_user_id === currentUser.value?.id)
+    ) {
+      fetchMessages(); // Atualiza a lista de mensagens sempre que receber uma mensagem relevante
+    }
+  };
+  ws.onclose = () => {
+    setTimeout(connectWebSocket, 1000);
+  };
+};
+
+onMounted(() => {
+  fetchUsers();
+  connectWebSocket();
+});
+
+onUnmounted(() => {
+  if (ws) ws.close();
+});
 </script>
 
 <style scoped>

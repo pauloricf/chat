@@ -3,7 +3,7 @@
     <div v-for="msg in messages" :key="msg.id" :class="['message', { 'me': msg.from_user_id === currentUser.id }]">
       <div class="bubble">
         <span v-if="msg.from_user_id === currentUser.id" class="sender-label">Você:</span>
-        <span v-else class="sender-label">{{ msg.from_user_id === currentUser.id ? 'Você' : 'Contato' }}:</span>
+        <span v-else class="sender-label">{{ contactUser?.nome || contactUser?.username || 'Contato' }}:</span>
         {{ msg.content }}
       </div>
       <div class="meta">{{ msg.created_at ? new Date(msg.created_at).toLocaleTimeString() : '' }}</div>
@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ messages: any[], currentUser: any }>();
+defineProps<{ messages: any[], currentUser: any, contactUser: any }>();
 </script>
 
 <style scoped>

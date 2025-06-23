@@ -1,7 +1,17 @@
 <template>
-  <form class="message-input" @submit.prevent="send">
-    <input v-model="text" placeholder="Digite uma mensagem..." required />
-    <button type="submit">Enviar</button>
+  <form class="flex gap-2 mb-1" @submit.prevent="send">
+    <input
+      v-model="text"
+      placeholder="Digite uma mensagem..."
+      required
+      class="flex-1 px-4 py-2 rounded-2xl border border-gray-300 bg-white h-12"
+    />
+    <button
+      type="submit"
+      class="bg-green-500 hover:bg-green-700 text-white font-bold rounded-2xl px-4 py-2 h-12"
+    >
+      Enviar
+    </button>
   </form>
 </template>
 
@@ -16,31 +26,3 @@ const send = () => {
   text.value = '';
 };
 </script>
-
-<style scoped>
-.message-input {
-  display: flex;
-  padding: 0.5rem;
-  background: #f7f7f7;
-  border-top: 1px solid #eee;
-}
-input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 18px;
-  border: 1px solid #ccc;
-  margin-right: 8px;
-}
-button {
-  background: #25d366;
-  color: #fff;
-  border: none;
-  border-radius: 18px;
-  padding: 10px 18px;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:hover {
-  background: #128c7e;
-}
-</style>
